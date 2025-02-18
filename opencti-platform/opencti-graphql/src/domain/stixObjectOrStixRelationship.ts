@@ -3,7 +3,7 @@ import { READ_PLATFORM_INDICES, UPDATE_OPERATION_ADD, UPDATE_OPERATION_REMOVE } 
 import { type EntityOptions, storeLoadById } from '../database/middleware-loader';
 import { ABSTRACT_STIX_OBJECT, ABSTRACT_STIX_REF_RELATIONSHIP, ABSTRACT_STIX_RELATIONSHIP } from '../schema/general';
 import { FunctionalError, UnsupportedError } from '../config/errors';
-import { isStixRefRelationship, RELATION_CREATED_BY } from '../schema/stixRefRelationship';
+import { isStixRefRelationship, RELATION_CREATED_BY, RELATION_OBJECT_MARKING } from '../schema/stixRefRelationship';
 import { listThings, storeLoadByIdWithRefs, transformPatchToInput, updateAttributeFromLoadedWithRefs, validateCreatedBy } from '../database/middleware';
 import { notify } from '../database/redis';
 import { BUS_TOPICS } from '../config/conf';
@@ -12,6 +12,7 @@ import { type StixRefRelationshipAddInput, type StixRefRelationshipsAddInput } f
 import type { BasicStoreCommon, BasicStoreObject } from '../types/store';
 import { schemaRelationsRefDefinition } from '../schema/schema-relationsRef';
 import { buildRelationData } from '../database/data-builder';
+import { validateMarking } from '../utils/access';
 
 type BusTopicsKeyType = keyof typeof BUS_TOPICS;
 
@@ -51,12 +52,15 @@ export const stixObjectOrRelationshipAddRefRelation = async (
   type: string,
   opts = {}
 ): Promise<any> => { // TODO remove any when all resolvers in ts
-  const to = await findById(context, user, input.toId);
-
+  // Validate specific relations, created by and markings
+  if (input.relationship_type === RELATION_OBJECT_MARKING) {
+    await validateMarking(context, user, input.toId);
+  }
   if (input.relationship_type === RELATION_CREATED_BY) {
     await validateCreatedBy(context, user, input.toId);
   }
-
+  // Add the relationship with patching
+  const to = await findById(context, user, input.toId);
   const patchedFrom = await patchElementWithRefRelationships(context, user, stixObjectOrRelationshipId, type, input.relationship_type, [input.toId], UPDATE_OPERATION_ADD, opts);
   const { element: refRelation } = await buildRelationData(context, user, { from: patchedFrom, to, relationship_type: input.relationship_type });
   await notify(BUS_TOPICS[type as BusTopicsKeyType].EDIT_TOPIC, refRelation, user);

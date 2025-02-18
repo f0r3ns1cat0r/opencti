@@ -15927,6 +15927,7 @@ export type MutationUploadPendingArgs = {
   entityId?: InputMaybe<Scalars['String']['input']>;
   errorOnExisting?: InputMaybe<Scalars['Boolean']['input']>;
   file: Scalars['Upload']['input'];
+  file_markings?: InputMaybe<Array<Scalars['String']['input']>>;
   labels?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   refreshEntity?: InputMaybe<Scalars['Boolean']['input']>;
 };
@@ -29187,12 +29188,14 @@ export type UserGroupsArgs = {
 
 
 export type UserObjectAssignedOrganizationArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<OrganizationsOrdering>;
   orderMode?: InputMaybe<OrderingMode>;
 };
 
 
 export type UserObjectOrganizationArgs = {
+  first?: InputMaybe<Scalars['Int']['input']>;
   orderBy?: InputMaybe<OrganizationsOrdering>;
   orderMode?: InputMaybe<OrderingMode>;
 };
@@ -29439,6 +29442,7 @@ export type UserAddInput = {
   name: Scalars['String']['input'];
   objectOrganization?: InputMaybe<Array<Scalars['ID']['input']>>;
   password: Scalars['String']['input'];
+  prevent_default_groups?: InputMaybe<Scalars['Boolean']['input']>;
   submenu_auto_collapse?: InputMaybe<Scalars['Boolean']['input']>;
   submenu_show_icons?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;

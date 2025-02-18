@@ -3624,9 +3624,25 @@ const elRemoveRelationConnection = async (context, user, elementsImpact) => {
   if (impacts.length > 0) {
     const idsToResolve = impacts.map(([k]) => k);
     const dataIds = await elFindByIds(context, user, idsToResolve, { baseData: true });
-    const elIdsCache = R.mergeAll(dataIds.map((element) => ({ [element.internal_id]: element._id })));
-    const indexCache = R.mergeAll(dataIds.map((element) => ({ [element.internal_id]: element._index })));
+    // Build cache for rest of execution
+    const elIdsCache = {};
+    const indexCache = {};
+    let startProcessingTime = new Date().getTime();
+    for (let idIndex = 0; idIndex < dataIds.length; idIndex += 1) {
+      const element = dataIds[idIndex];
+      elIdsCache[element.internal_id] = element._id;
+      indexCache[element.internal_id] = element._index;
+      // Prevent event loop locking more than MAX_EVENT_LOOP_PROCESSING_TIME
+      if (new Date().getTime() - startProcessingTime > MAX_EVENT_LOOP_PROCESSING_TIME) {
+        startProcessingTime = new Date().getTime();
+        await new Promise((resolve) => {
+          setImmediate(resolve);
+        });
+      }
+    }
+    // Split by max operations, create the bulk
     const groupsOfImpacts = R.splitEvery(MAX_BULK_OPERATIONS, impacts);
+    startProcessingTime = new Date().getTime();
     for (let i = 0; i < groupsOfImpacts.length; i += 1) {
       const impactsBulk = groupsOfImpacts[i];
       const bodyUpdateRaw = impactsBulk.map(([impactId, elementMeta]) => {
@@ -3637,12 +3653,19 @@ const elRemoveRelationConnection = async (context, user, elementsImpact) => {
           if (isEmptyField(fromIndex)) { // No need to clean up the connections if the target is already deleted.
             return updates;
           }
-          const [relationType, relationIndex] = typeAndIndex.split('|');
+          const [relationType, relationIndex, side, sideType] = typeAndIndex.split('|');
           const refField = isStixRefRelationship(relationType) && isInferredIndex(relationIndex) ? ID_INFERRED : ID_INTERNAL;
           const rel_key = buildRefRelationKey(relationType, refField);
-          let source = `if (ctx._source['${rel_key}'] != null) ctx._source['${rel_key}'] = ctx._source['${rel_key}'].stream().filter(id -> !params.cleanupIds.contains(id)).collect(Collectors.toList());`;
-          if (isStixRefRelationship(relationType)) {
-            source += 'ctx._source[\'updated_at\'] = params.updated_at;';
+          let source = `if (ctx._source['${rel_key}'] != null) ctx._source['${rel_key}'] = ctx._source['${rel_key}'].stream().filter(id -> !params.cleanupIds.contains(id)).collect(Collectors.toList())`;
+          // Only impact the updated at on the from side of the ref relationship
+          const fromSide = side === 'from';
+          if (fromSide && isStixRefRelationship(relationType)) {
+            if (isUpdatedAtObject(sideType)) {
+              source += '; ctx._source[\'updated_at\'] = params.updated_at';
+            }
+            if (isModifiedObject(sideType)) {
+              source += '; ctx._source[\'modified\'] = params.updated_at';
+            }
           }
           const script = { source, params: { cleanupIds, updated_at: now() } };
           updates.push([
@@ -3656,6 +3679,13 @@ const elRemoveRelationConnection = async (context, user, elementsImpact) => {
       if (bodyUpdate.length > 0) {
         await elBulk({ refresh: true, timeout: BULK_TIMEOUT, body: bodyUpdate });
       }
+      // Prevent event loop locking more than MAX_EVENT_LOOP_PROCESSING_TIME
+      if (new Date().getTime() - startProcessingTime > MAX_EVENT_LOOP_PROCESSING_TIME) {
+        startProcessingTime = new Date().getTime();
+        await new Promise((resolve) => {
+          setImmediate(resolve);
+        });
+      }
     }
   }
 };
@@ -3668,8 +3698,8 @@ const computeDeleteElementsImpacts = async (cleanupRelations, toBeRemovedIds, re
     const relation = cleanupRelations[i];
     const fromWillNotBeRemoved = !relationsToRemoveMap.has(relation.fromId) && !toBeRemovedIds.includes(relation.fromId);
     const isFromCleanup = fromWillNotBeRemoved && isImpactedTypeAndSide(relation.entity_type, relation.fromType, relation.toType, ROLE_FROM);
-    const cleanKey = `${relation.entity_type}|${relation._index}`;
     if (isFromCleanup) {
+      const cleanKey = `${relation.entity_type}|${relation._index}|from|${relation.fromType}`;
       if (isEmptyField(elementsImpact[relation.fromId])) {
         elementsImpact[relation.fromId] = { [cleanKey]: [relation.toId] };
       } else {
@@ -3684,6 +3714,7 @@ const computeDeleteElementsImpacts = async (cleanupRelations, toBeRemovedIds, re
     const toWillNotBeRemoved = !relationsToRemoveMap.has(relation.toId) && !toBeRemovedIds.includes(relation.toId);
     const isToCleanup = toWillNotBeRemoved && isImpactedTypeAndSide(relation.entity_type, relation.fromType, relation.toType, ROLE_TO);
     if (isToCleanup) {
+      const cleanKey = `${relation.entity_type}|${relation._index}|to|${relation.toType}`;
       if (isEmptyField(elementsImpact[relation.toId])) {
         elementsImpact[relation.toId] = { [cleanKey]: [relation.fromId] };
       } else {
@@ -3772,7 +3803,7 @@ export const elMarkElementsAsDraftDelete = async (context, user, elements) => {
   const draftRelations = relations.filter((f) => f._index.includes(INDEX_DRAFT_OBJECTS));
   const liveRelations = relations.filter((f) => !f._index.includes(INDEX_DRAFT_OBJECTS));
   await elDeleteInstances(draftRelations);
-  liveRelations.map((r) => copyLiveElementToDraft(context, user, r, DRAFT_OPERATION_DELETE_LINKED));
+  await Promise.all(liveRelations.map((r) => copyLiveElementToDraft(context, user, r, DRAFT_OPERATION_DELETE_LINKED)));
   // 02/ Remove all elements: delete instances created in draft, mark as deletion for others
   const draftElements = elements.filter((f) => f._index.includes(INDEX_DRAFT_OBJECTS));
   const liveElements = elements.filter((f) => !f._index.includes(INDEX_DRAFT_OBJECTS));
@@ -4167,12 +4198,12 @@ export const elIndexElements = async (context, user, indexingType, elements) => 
         const field = buildRefRelationKey(t.relation, t.field);
         let script = `if (ctx._source['${field}'] == null) ctx._source['${field}'] = [];`;
         script += `ctx._source['${field}'].addAll(params['${field}'])`;
-        if (isStixRefRelationship(t.relation)) {
-          const fromSide = R.find((e) => e.side === 'from', t.elements);
-          if (fromSide && isUpdatedAtObject(fromSide.type)) {
+        const fromSide = R.find((e) => e.side === 'from', t.elements);
+        if (fromSide && isStixRefRelationship(t.relation)) {
+          if (isUpdatedAtObject(fromSide.type)) {
             script += '; ctx._source[\'updated_at\'] = params.updated_at';
           }
-          if (fromSide && isModifiedObject(fromSide.type)) {
+          if (isModifiedObject(fromSide.type)) {
             script += '; ctx._source[\'modified\'] = params.updated_at';
           }
         }
