@@ -1756,7 +1756,6 @@ export const elFindByIds = async (context, user, ids, opts = {}) => {
     };
     mustTerms.push(should);
     if (types && types.length > 0) {
-      // No cache management is possible, just put the type in the filtering
       const shouldType = {
         bool: {
           should: [
@@ -1777,15 +1776,9 @@ export const elFindByIds = async (context, user, ids, opts = {}) => {
     const body = {
       query: {
         bool: {
-          // Put everything under filter to prevent score computation
-          // Search without score when no sort is applied is faster
-          filter: [{
-            bool: {
-              must: [...mustTerms, ...draftMust],
-              must_not: markingRestrictions.must_not,
-            },
-          }]
-        }
+          must: [...mustTerms, ...draftMust],
+          must_not: markingRestrictions.must_not,
+        },
       },
     };
     if (relCount) {
@@ -3340,13 +3333,13 @@ const elQueryBodyBuilder = async (context, user, options) => {
   let scoreSearchOrder = orderMode;
   if (search !== null && search.length > 0) {
     const shouldSearch = elGenerateFullTextSearchShould(search, options);
-    const searchBool = {
+    const bool = {
       bool: {
         should: shouldSearch,
         minimum_should_match: 1,
       },
     };
-    mustFilters.push(searchBool);
+    mustFilters.push(bool);
     // When using a search, force a score ordering if nothing specified
     if (orderCriterion.length === 0) {
       orderCriterion.unshift('_score');
@@ -3727,7 +3720,7 @@ export const elAggregationsList = async (context, user, indexName, aggregations,
   }
   const query = {
     index: getIndicesToQuery(context, user, indexName),
-    track_total_hits: false,
+    track_total_hits: true,
     _source: false,
     body,
   };
