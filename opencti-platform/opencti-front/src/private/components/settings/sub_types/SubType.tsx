@@ -11,7 +11,6 @@ import { useFormatter } from '../../../../components/i18n';
 import useAttributes from '../../../../utils/hooks/useAttributes';
 import useHelper from '../../../../utils/hooks/useHelper';
 import useQueryLoading from '../../../../utils/hooks/useQueryLoading';
-import CustomizationMenu from '../CustomizationMenu';
 import SubTypeMenu from './SubTypeMenu';
 import EntitySettingSettings from './entity_setting/EntitySettingSettings';
 import { entitySettingsOverviewLayoutCustomizationFragment } from './entity_setting/EntitySettingsOverviewLayoutCustomization';
@@ -102,9 +101,6 @@ const SubTypeComponent: React.FC<SubTypeProps> = ({ queryRef }) => {
           <EntitySettingSettings entitySettingsData={subType.settings} />
         )
       }
-
-      {/** right menu drawer permanent */}
-      <CustomizationMenu />
 
       <SubTypeMenu
         entityType={subType.label}
