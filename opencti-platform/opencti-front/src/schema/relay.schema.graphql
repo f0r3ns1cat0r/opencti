@@ -13471,6 +13471,9 @@ type Playbook implements InternalObject & BasicObject {
   metrics: [Metric]
   name: String!
   description: String
+  created_at: DateTime
+  updated_at: DateTime
+  creators: [Creator!]
   playbook_running: Boolean
   playbook_definition: String
   last_executions: [PlayBookExecution!]
@@ -13502,6 +13505,8 @@ type PlaybookInsertResult {
 enum PlaybooksOrdering {
   name
   playbook_running
+  created_at
+  updated_at
   _score
 }
 
