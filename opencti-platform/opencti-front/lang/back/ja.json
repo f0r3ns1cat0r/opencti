@@ -599,6 +599,7 @@
   "Message": "メッセージ",
   "Message ID": "メッセージID",
   "Messages": "メッセージ",
+  "Metadata": "メタデータ",
   "Metadata date": "更新日",
   "Metric name": "メトリック名",
   "Metric value": "メトリクス値",
@@ -628,6 +629,7 @@
   "Network traffic end date": "ネットワークトラフィック終了日",
   "Network traffic start date": "ネットワークトラフィック開始日",
   "New value": "新しい値",
+  "News feed type": "ニュースフィードの種類",
   "No creators accumulation": "クリエーターの蓄積がない",
   "No dependencies": "依存関係なし",
   "Not equal": "等しくない",
@@ -1062,6 +1064,7 @@
   "Workspace graph data": "ワークスペースのグラフデータ",
   "Workspace type": "ワークスペースタイプ",
   "X_Aliases": "X_エイリアス",
+  "XTM Hub available news feed types": "XTMハブで利用可能なニュースフィードの種類",
   "XTM Hub backend is reachable": "XTM Hubのバックエンドに到達可能",
   "XTM Hub last connectivity check": "XTM ハブの最終接続チェック",
   "XTM Hub registration date": "XTMハブ登録日",
@@ -1074,4 +1077,3 @@
   "XTM One registration manager": "XTM One登録マネージャー",
   "XTM1 CGU acceptance status": "XTM1 CGU受入状況"
 }
-
