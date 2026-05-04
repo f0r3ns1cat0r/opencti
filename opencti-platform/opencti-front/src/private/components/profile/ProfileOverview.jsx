@@ -35,6 +35,7 @@ import DashboardSettings from '../DashboardSettings';
 import TokenCreationDrawer from './api_tokens/TokenCreationDrawer';
 import TokenList from './api_tokens/TokenList';
 import ProfileLocalStorage from './ProfileLocalStorage';
+import ProfileOverviewNewsFeed from './ProfileOverviewNewsFeed';
 
 const styles = () => ({
   container: {
@@ -107,6 +108,7 @@ const userValidation = (t) => Yup.object().shape({
   submenu_show_icons: Yup.boolean(),
   submenu_auto_collapse: Yup.boolean(),
   monochrome_labels: Yup.boolean(),
+  unsubscribed_news_feed_types: Yup.array().of(Yup.string()),
 });
 
 const passwordValidation = (t) => Yup.object().shape({
@@ -204,7 +206,8 @@ const ProfileOverviewComponent = (props) => {
   const { t, me, classes, about, settings, themes } = props;
   const { external, otp_activated: useOtp } = me;
   const { t_i18n } = useFormatter();
-  const { isPlaygroundEnable } = useHelper();
+  const { isPlaygroundEnable, isFeatureEnable } = useHelper();
+  const isXTMHubNewsFeedEnabled = isFeatureEnable('XTMHUB_NEWS_FEED_ENABLED');
   const { setTitle } = useConnectedDocumentModifier();
   setTitle(t_i18n('Profile'));
   const objectOrganization = convertOrganizations(me);
@@ -474,6 +477,13 @@ const ProfileOverviewComponent = (props) => {
           <DashboardSettings />
         </Card>
       ) : null}
+      {isXTMHubNewsFeedEnabled && settings.xtm_hub_available_news_feed_types?.length > 0 && (
+        <ProfileOverviewNewsFeed
+          availableNewsFeedTypes={settings.xtm_hub_available_news_feed_types}
+          unsubscribedNewsFeedTypes={me.unsubscribed_news_feed_types}
+          onSubmitField={handleSubmitField}
+        />
+      )}
       <Card title={t('Authentication')}>
         <div style={{ float: 'right', marginTop: -5 }}>
           {useOtp && (
@@ -619,6 +629,7 @@ const ProfileOverview = createFragmentContainer(ProfileOverviewComponent, {
       submenu_show_icons
       submenu_auto_collapse
       monochrome_labels
+      unsubscribed_news_feed_types
       personal_notifiers {
         id
         name
@@ -641,6 +652,7 @@ const ProfileOverview = createFragmentContainer(ProfileOverviewComponent, {
   settings: graphql`
     fragment ProfileOverview_settings on Settings {
       otp_mandatory
+      xtm_hub_available_news_feed_types
     }
   `,
 });

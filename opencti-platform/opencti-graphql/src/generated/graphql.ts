@@ -16444,6 +16444,7 @@ export type MeUser = BasicObject & InternalObject & {
   submenu_show_icons?: Maybe<Scalars['Boolean']['output']>;
   theme?: Maybe<Scalars['String']['output']>;
   unit_system?: Maybe<UnitSystem>;
+  unsubscribed_news_feed_types?: Maybe<Array<Scalars['String']['output']>>;
   user_confidence_level?: Maybe<ConfidenceLevel>;
   user_email: Scalars['String']['output'];
 };
@@ -29829,6 +29830,7 @@ export type Settings = BasicObject & InternalObject & IntlSettings & ThemeSettin
   standard_id: Scalars['String']['output'];
   updated_at: Scalars['DateTime']['output'];
   view_all_users?: Maybe<Scalars['Boolean']['output']>;
+  xtm_hub_available_news_feed_types?: Maybe<Array<Scalars['String']['output']>>;
   xtm_hub_backend_is_reachable?: Maybe<Scalars['Boolean']['output']>;
   xtm_hub_last_connectivity_check?: Maybe<Scalars['DateTime']['output']>;
   xtm_hub_registration_date?: Maybe<Scalars['DateTime']['output']>;
@@ -35730,6 +35732,7 @@ export type User = BasicObject & InternalObject & {
   submenu_show_icons?: Maybe<Scalars['Boolean']['output']>;
   theme?: Maybe<Scalars['String']['output']>;
   unit_system?: Maybe<UnitSystem>;
+  unsubscribed_news_feed_types?: Maybe<Array<Scalars['String']['output']>>;
   updated_at: Scalars['DateTime']['output'];
   user_confidence_level?: Maybe<ConfidenceLevel>;
   user_email: Scalars['String']['output'];
@@ -36019,6 +36022,7 @@ export type UserAddInput = {
   submenu_show_icons?: InputMaybe<Scalars['Boolean']['input']>;
   theme?: InputMaybe<Scalars['String']['input']>;
   unit_system?: InputMaybe<Scalars['String']['input']>;
+  unsubscribed_news_feed_types?: InputMaybe<Array<Scalars['String']['input']>>;
   user_confidence_level?: InputMaybe<ConfidenceLevelInput>;
   user_email?: InputMaybe<Scalars['String']['input']>;
   user_service_account?: InputMaybe<Scalars['Boolean']['input']>;
@@ -46302,6 +46306,7 @@ export type MeUserResolvers<ContextType = any, ParentType extends ResolversParen
   submenu_show_icons?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   theme?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   unit_system?: Resolver<Maybe<ResolversTypes['UnitSystem']>, ParentType, ContextType>;
+  unsubscribed_news_feed_types?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   user_confidence_level?: Resolver<Maybe<ResolversTypes['ConfidenceLevel']>, ParentType, ContextType>;
   user_email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -49540,6 +49545,7 @@ export type SettingsResolvers<ContextType = any, ParentType extends ResolversPar
   standard_id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updated_at?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   view_all_users?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  xtm_hub_available_news_feed_types?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   xtm_hub_backend_is_reachable?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   xtm_hub_last_connectivity_check?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   xtm_hub_registration_date?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
@@ -51422,6 +51428,7 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
   submenu_show_icons?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   theme?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   unit_system?: Resolver<Maybe<ResolversTypes['UnitSystem']>, ParentType, ContextType>;
+  unsubscribed_news_feed_types?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
   updated_at?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   user_confidence_level?: Resolver<Maybe<ResolversTypes['ConfidenceLevel']>, ParentType, ContextType>;
   user_email?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
