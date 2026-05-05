@@ -44,7 +44,7 @@ import { stixLoadByFilters, stixLoadById } from '../../database/middleware';
 import { convertRelationRefsFilterKeys } from '../../utils/filtering/filtering-utils';
 import { isEnterpriseEdition, isEnterpriseEditionFromSettings } from '../../enterprise-edition/ee';
 import { listenPirEvents } from './listenPirEventsUtils';
-import { isValidEventType } from './playbookManagerUtils';
+import { isDebugPlaybook, isValidEventType } from './playbookManagerUtils';
 import { playbookExecutor } from './playbookExecutor';
 import type { BasicConnection, BasicStoreBase } from '../../types/store';
 import { isModuleActivated } from '../../database/cluster-module';
@@ -98,6 +98,10 @@ const playbookStreamHandler = async (streamEvents: Array<SseEvent<StreamDataEven
       // For each event we need to check ifs
       for (let playbookIndex = 0; playbookIndex < playbooks.length; playbookIndex += 1) {
         const playbook = playbooks[playbookIndex];
+        const currentPlaybookInDebug = isDebugPlaybook(playbook.id);
+        if (currentPlaybookInDebug) {
+          logApp.info(`[OPENCTI-MODULE] Playbook manager processing event ${eventId} for playbook ${playbook.name} (${playbook.id})`, { event: streamEvent.data });
+        }
         // Execute only of definition is available
         if (playbook.playbook_definition) {
           // Execute only if event coming from different playbook
@@ -117,6 +121,9 @@ const playbookStreamHandler = async (streamEvents: Array<SseEvent<StreamDataEven
                 const isValidEvent = isValidEventType(type, configuration);
                 const isMatch = await isStixMatchFilterGroup(context, SYSTEM_USER, data, jsonFilters);
 
+                if (currentPlaybookInDebug) {
+                  logApp.info(`[OPENCTI-MODULE] Event match for playbook ${playbook.name} (${playbook.id})`, { isValidEvent, isMatch, filters: jsonFilters });
+                }
                 // 02. Execute the component
                 if (isValidEvent && isMatch) {
                   const nextStep = { component: connector, instance };
