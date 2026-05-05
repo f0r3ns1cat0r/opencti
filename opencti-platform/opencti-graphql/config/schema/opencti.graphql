@@ -16077,6 +16077,11 @@ type MappedEntity {
   isEntityInContainer: Boolean!
 }
 
+enum InconsistencyCleaningType {
+  ALL,
+  REF_DUPLICATE_CLEAN,
+}
+
 type StixCoreObjectEditMutations {
   delete: ID @auth(for: [KNOWLEDGE_KNUPDATE_KNDELETE])
   relationAdd(input: StixRefRelationshipAddInput!): StixRefRelationship @auth(for: [KNOWLEDGE_KNUPDATE])
@@ -16095,6 +16100,7 @@ type StixCoreObjectEditMutations {
   exportAsk(input: ExportAskInput!): [File!]  @auth(for: [KNOWLEDGE_KNGETEXPORT_KNASKEXPORT])
   exportPush(file: Upload!): Boolean @auth(for: [CONNECTORAPI])
   removeFromDraft: ID @auth(for: [KNOWLEDGE])
+  cleanInconsistency(cleaningTypes: [InconsistencyCleaningType!]!): Boolean @auth(for: [KNOWLEDGE_KNUPDATE])
 }
 
 ######## STIX DOMAIN OBJECT ENTITIES

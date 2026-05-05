@@ -12534,6 +12534,11 @@ export enum IncidentsOrdering {
   XOpenctiWorkflowId = 'x_opencti_workflow_id'
 }
 
+export enum InconsistencyCleaningType {
+  All = 'ALL',
+  RefDuplicateClean = 'REF_DUPLICATE_CLEAN'
+}
+
 export type IndexedFile = {
   __typename?: 'IndexedFile';
   entity?: Maybe<StixObject>;
@@ -30449,6 +30454,7 @@ export type StixCoreObjectEditMutations = {
   askAnalysis?: Maybe<Work>;
   askEnrichment?: Maybe<Work>;
   askEnrichments?: Maybe<Array<Work>>;
+  cleanInconsistency?: Maybe<Scalars['Boolean']['output']>;
   clearAccessRestriction?: Maybe<StixCoreObject>;
   delete?: Maybe<Scalars['ID']['output']>;
   exportAsk?: Maybe<Array<File>>;
@@ -30492,6 +30498,11 @@ export type StixCoreObjectEditMutationsAskEnrichmentArgs = {
 
 export type StixCoreObjectEditMutationsAskEnrichmentsArgs = {
   connectorIds: Array<Scalars['ID']['input']>;
+};
+
+
+export type StixCoreObjectEditMutationsCleanInconsistencyArgs = {
+  cleaningTypes: Array<InconsistencyCleaningType>;
 };
 
 
@@ -39177,6 +39188,7 @@ export type ResolversTypes = ResolversObject<{
   IncidentEdge: ResolverTypeWrapper<Omit<IncidentEdge, 'node'> & { node: ResolversTypes['Incident'] }>;
   IncidentEditMutations: ResolverTypeWrapper<Omit<IncidentEditMutations, 'contextClean' | 'contextPatch' | 'fieldPatch' | 'relationAdd' | 'relationDelete'> & { contextClean?: Maybe<ResolversTypes['Incident']>, contextPatch?: Maybe<ResolversTypes['Incident']>, fieldPatch?: Maybe<ResolversTypes['Incident']>, relationAdd?: Maybe<ResolversTypes['StixRefRelationship']>, relationDelete?: Maybe<ResolversTypes['Incident']> }>;
   IncidentsOrdering: IncidentsOrdering;
+  InconsistencyCleaningType: InconsistencyCleaningType;
   IndexedFile: ResolverTypeWrapper<Omit<IndexedFile, 'entity'> & { entity?: Maybe<ResolversTypes['StixObject']> }>;
   IndexedFileConnection: ResolverTypeWrapper<Omit<IndexedFileConnection, 'edges'> & { edges?: Maybe<Array<Maybe<ResolversTypes['IndexedFileEdge']>>> }>;
   IndexedFileEdge: ResolverTypeWrapper<Omit<IndexedFileEdge, 'node'> & { node: ResolversTypes['IndexedFile'] }>;
@@ -49773,6 +49785,7 @@ export type StixCoreObjectEditMutationsResolvers<ContextType = any, ParentType e
   askAnalysis?: Resolver<Maybe<ResolversTypes['Work']>, ParentType, ContextType, RequireFields<StixCoreObjectEditMutationsAskAnalysisArgs, 'contentSource' | 'contentType'>>;
   askEnrichment?: Resolver<Maybe<ResolversTypes['Work']>, ParentType, ContextType, RequireFields<StixCoreObjectEditMutationsAskEnrichmentArgs, 'connectorId'>>;
   askEnrichments?: Resolver<Maybe<Array<ResolversTypes['Work']>>, ParentType, ContextType, RequireFields<StixCoreObjectEditMutationsAskEnrichmentsArgs, 'connectorIds'>>;
+  cleanInconsistency?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType, RequireFields<StixCoreObjectEditMutationsCleanInconsistencyArgs, 'cleaningTypes'>>;
   clearAccessRestriction?: Resolver<Maybe<ResolversTypes['StixCoreObject']>, ParentType, ContextType>;
   delete?: Resolver<Maybe<ResolversTypes['ID']>, ParentType, ContextType>;
   exportAsk?: Resolver<Maybe<Array<ResolversTypes['File']>>, ParentType, ContextType, RequireFields<StixCoreObjectEditMutationsExportAskArgs, 'input'>>;

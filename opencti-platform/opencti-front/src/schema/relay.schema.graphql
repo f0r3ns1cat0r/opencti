@@ -9931,6 +9931,11 @@ type MappedEntity {
   isEntityInContainer: Boolean!
 }
 
+enum InconsistencyCleaningType {
+  ALL
+  REF_DUPLICATE_CLEAN
+}
+
 type StixCoreObjectEditMutations {
   delete: ID
   relationAdd(input: StixRefRelationshipAddInput!): StixRefRelationship
@@ -9949,6 +9954,7 @@ type StixCoreObjectEditMutations {
   exportAsk(input: ExportAskInput!): [File!]
   exportPush(file: Upload!): Boolean
   removeFromDraft: ID
+  cleanInconsistency(cleaningTypes: [InconsistencyCleaningType!]!): Boolean
 }
 
 input StixDomainObjectFileEditInput {
