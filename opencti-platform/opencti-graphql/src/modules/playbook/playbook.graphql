@@ -73,6 +73,17 @@ type PlaybookEdge {
     node: Playbook!
 }
 
+type PlaybookManager {
+    activated: Boolean!
+    lastProcessedEventId: String
+    lastProcessedEventDate: DateTime
+    lastStreamEventId: String
+    lastStreamEventDate: DateTime
+    firstStreamEventId: String
+    firstStreamEventDate: DateTime
+    managerInGoodHealth: Boolean
+}
+
 # Queries
 type Query {
     playbook(id: String!): Playbook @auth(for: [AUTOMATION])
@@ -86,6 +97,7 @@ type Query {
     ): PlaybookConnection @auth(for: [AUTOMATION])
     playbookComponents: [PlaybookComponent]! @auth(for: [AUTOMATION])
     playbooksForEntity(id: String!): [Playbook] @auth(for: [AUTOMATION])
+    playbookManagerInfo: PlaybookManager @auth(for: [AUTOMATION])
 }
 
 input PlaybookAddInput {

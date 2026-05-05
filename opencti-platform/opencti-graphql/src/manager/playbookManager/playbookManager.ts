@@ -16,7 +16,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 import { v4 as uuidv4 } from 'uuid';
 import { clearIntervalAsync, setIntervalAsync, type SetIntervalAsyncTimer } from 'set-interval-async/fixed';
 import type { Moment } from 'moment/moment';
-import { createStreamProcessor } from '../../database/stream/stream-handler';
+import { createStreamProcessor, fetchStreamInfo } from '../../database/stream/stream-handler';
 import { type StreamProcessor } from '../../database/stream/stream-utils';
 import { redisGetManagerEventState, redisSetManagerEventState } from '../../database/redis';
 import { lockResources } from '../../lock/master-lock';
@@ -47,6 +47,7 @@ import { listenPirEvents } from './listenPirEventsUtils';
 import { isValidEventType } from './playbookManagerUtils';
 import { playbookExecutor } from './playbookExecutor';
 import type { BasicConnection, BasicStoreBase } from '../../types/store';
+import { isModuleActivated } from '../../database/cluster-module';
 
 const PLAYBOOK_LIVE_KEY = conf.get('playbook_manager:lock_key');
 const PLAYBOOK_CRON_KEY = conf.get('playbook_manager:lock_cron_key');
@@ -54,6 +55,31 @@ const PLAYBOOK_CRON_MAX_SIZE = conf.get('playbook_manager:cron_max_size') || 500
 const PLAYBOOK_MANAGER_NAME = 'playbook_manager';
 const STREAM_SCHEDULE_TIME = 10000;
 const CRON_SCHEDULE_TIME = 60000; // 1 minute
+
+export const getManagerInfo = async () => {
+  const isPlaybookManagerActivated = await isModuleActivated('PLAYBOOK_MANAGER');
+  const lastProcessedEventId = await redisGetManagerEventState(PLAYBOOK_MANAGER_NAME);
+  const lastManagerEventId = lastProcessedEventId ? Number(lastProcessedEventId.split('-')[0]) : 0;
+  const lastProcessedEventDate = lastProcessedEventId ? utcDate(Number(lastProcessedEventId.split('-')[0])).toISOString() : null;
+
+  const streamProcessorInfo = await fetchStreamInfo();
+  const lastStreamEventId = streamProcessorInfo.lastEventId;
+  const lastStreamEventDate = lastStreamEventId ? utcDate(Number(lastStreamEventId.split('-')[0])).toISOString() : null;
+  const firstStreamEventId = streamProcessorInfo.firstEventId;
+  const firstStreamEventDate = firstStreamEventId ? utcDate(Number(firstStreamEventId.split('-')[0])).toISOString() : null;
+  const middleStreamEventId = (Number(lastStreamEventId.split('-')[0]) + Number(firstStreamEventId.split('-')[0])) / 2;
+  const isManagerLate = lastManagerEventId < middleStreamEventId;
+  return {
+    activated: isPlaybookManagerActivated,
+    lastProcessedEventId,
+    lastProcessedEventDate,
+    lastStreamEventId,
+    lastStreamEventDate,
+    firstStreamEventId,
+    firstStreamEventDate,
+    managerInGoodHealth: !isManagerLate,
+  };
+};
 
 const playbookStreamHandler = async (streamEvents: Array<SseEvent<StreamDataEvent>>) => {
   try {
@@ -186,6 +212,13 @@ export const executePlaybookOnEntity = async (context: AuthContext, id: string, 
   return false;
 };
 
+const checkManagerDelay = async () => {
+  const { lastProcessedEventId, lastStreamEventId, firstStreamEventId, managerInGoodHealth } = await getManagerInfo();
+  if (!managerInGoodHealth) {
+    logApp.warn('[OPENCTI-MODULE] Playbook manager is late to process events', { lastProcessedEventId, firstStreamEventId, lastStreamEventId });
+  }
+};
+
 const initPlaybookManager = () => {
   const WAIT_TIME_ACTION = 2000;
   let streamScheduler: SetIntervalAsyncTimer<[]>;
@@ -208,9 +241,14 @@ const initPlaybookManager = () => {
       streamProcessor = createStreamProcessor('Playbook manager', playbookStreamHandler, { withInternal: true });
       const lastEventState = await redisGetManagerEventState(PLAYBOOK_MANAGER_NAME);
       await streamProcessor.start(lastEventState ?? 'live');
+      let delayCheckerCounter = 0;
       while (!shutdown && streamProcessor.running()) {
         lock.signal.throwIfAborted();
         await wait(WAIT_TIME_ACTION);
+        if (++delayCheckerCounter >= 10) {
+          await checkManagerDelay();
+          delayCheckerCounter = 0;
+        }
       }
       logApp.info('[OPENCTI-MODULE] End of playbook manager processing');
     } catch (e: any) {
