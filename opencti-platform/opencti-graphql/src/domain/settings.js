@@ -21,6 +21,7 @@ import { completeXTMHubDataForRegistration } from '../utils/settings.helper';
 import { XTM_ONE_CHATBOT_URL } from '../http/httpChatbotProxy';
 import { findById as findThemeById } from '../modules/theme/theme-domain';
 import { buildAvailableProviders } from './setting-auth';
+import { CguStatus } from '../generated/graphql';
 
 export const getMemoryStatistics = () => {
   return { ...process.memoryUsage(), ...getHeapStatistics() };
@@ -223,6 +224,14 @@ export const settingsEditField = async (context, user, settingsId, input) => {
       }
     }
   }
+  const cguStatus = data.find((inputData) => inputData.key === 'filigran_chatbot_ai_cgu_status');
+  if (cguStatus && cguStatus.value) {
+    const validStatuses = Object.values(CguStatus);
+    if (!Array.isArray(cguStatus.value) || cguStatus.value.length > 1 || !validStatuses.includes(cguStatus.value[0])) {
+      throw UnsupportedError(`Invalid CGU status, expected one of ${validStatuses.join(', ')}`);
+    }
+  }
+
   await updateAttribute(context, user, settingsId, ENTITY_TYPE_SETTINGS, data);
   await publishUserAction({
     user,
