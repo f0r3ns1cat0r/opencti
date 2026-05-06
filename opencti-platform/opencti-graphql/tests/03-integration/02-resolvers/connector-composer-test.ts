@@ -231,7 +231,7 @@ describe('Connector Composer and Managed Connectors', () => {
       const catalogId = catalogHelper.getCatalogId();
 
       const testCases = [
-        { input: 'ServiceNow Connector', expected: 'service-now-connector' },
+        { input: 'ServiceNow Connector', expected: 'servicenow-connector' },
         { input: '-Test@Connector#2024!', expected: 'test-connector-2024' },
         { input: 'Very___Long---Name__With$$Special##Chars@@That--Exceeds--The--Maximum--Length--Limit--Of--63--Characters', expected: 'very-long-name-with-special-chars-that-exceeds-the-maximum-leng' },
       ];
@@ -1239,7 +1239,7 @@ describe('Connector Composer and Managed Connectors', () => {
       expect(managedConnectorAdd).not.toBeNull();
       managedConnectorId = managedConnectorAdd.id;
       createdConnectorIds.add(managedConnectorId);
-      expect(managedConnectorAdd.name).toEqual('test-ip-info-connector');
+      expect(managedConnectorAdd.name).toEqual('test-ipinfo-connector');
       expect(managedConnectorAdd.connector_user_id).toBeDefined();
       expect(managedConnectorAdd.manager_requested_status).toEqual('stopped');
       expect(managedConnectorAdd.manager_contract_hash).toBeDefined();
